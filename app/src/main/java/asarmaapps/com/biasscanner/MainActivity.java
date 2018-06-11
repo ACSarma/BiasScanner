@@ -37,7 +37,9 @@ public class MainActivity extends AppCompatActivity {
     private EditText editText;
     private float sentiment;
     private float magnitude;
-    private String message;
+    private String messageSentiment;
+    private String messageSyntax;
+    private List<Entity> entityList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         analyzeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // More code here
+                //NaturalLanguageService
                 final CloudNaturalLanguage naturalLanguageService =
                         new CloudNaturalLanguage.Builder(
                                 AndroidHttp.newCompatibleTransport(),
@@ -78,59 +80,25 @@ public class MainActivity extends AppCompatActivity {
                 document.setLanguage("en-US");
                 document.setContent(transcript);
 
-                Features features = new Features();
-                features.setExtractEntities(true);
-                features.setExtractDocumentSentiment(true);
-                features.setExtractSyntax(true);
-
-                final AnnotateTextRequest request = new AnnotateTextRequest();
-                request.setDocument(document);
-                request.setFeatures(features);
-
-                final AnalyzeSyntaxRequest request1 = new AnalyzeSyntaxRequest();
-                request1.setDocument(document);
-               // request1.setFeatures(features);
-
                 AsyncTask.execute(new Runnable() {
                     @Override
                     public void run() {
                      try{
-                        AnalyzeSyntaxResponse response2 =
-                                naturalLanguageService.documents().
-                                        analyzeSyntax(request1).execute();
-                        AnnotateTextResponse response =
-                                naturalLanguageService.documents()
-                                        .annotateText(request).execute();
-
-                        // More code here
-                        final List<Entity> entityList = response.getEntities();
-                        sentiment = response.getDocumentSentiment().getScore();
-                        magnitude = response.getDocumentSentiment().getMagnitude();
-
-                        syntax(document, naturalLanguageService);
-
-                        if(sentiment >= -0.1 && sentiment <= 0.1){
-                            message = "This text is neutral";
-                        }
-                        if(sentiment < -0.1){
-                            message = "This text is negative";
-                        }
-                        if(sentiment > 0.1){
-                            message = "This text is positive";
-                        }
+                        messageSyntax = (getSyntax(document, naturalLanguageService));
+                        messageSentiment = (getSentiment(document, naturalLanguageService));
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                resultText.setText(messageSyntax);
                                 String entities = "";
                                 for (Entity entity : entityList) {
                                     entities += "\n" + entity.getName().toUpperCase() + " " + entity.getSalience();
                                 }
-
                                 AlertDialog dialog =
                                         new AlertDialog.Builder(MainActivity.this)
                                                 .setTitle("Sentiment: " + sentiment + " Mag: " + magnitude)
-                                                .setMessage(message + "\n" + "This audio file talks about :"
-                                                        + entities)
+                                                .setMessage(messageSentiment+ "\n" + "This audio file talks about :"
+                                                        + entities + "\n" + messageSyntax)
                                                 .setNeutralButton("Okay", null)
                                                 .create();
                                 dialog.show();
@@ -139,29 +107,64 @@ public class MainActivity extends AppCompatActivity {
                      }catch (Exception  IOException){
 
                      }
+
                     }
                 });
             }
         });
     }
 
-    public void syntax(Document doc, CloudNaturalLanguage naturalLanguageService){
+    public String getSentiment(Document doc, CloudNaturalLanguage naturalLanguageService){
         String message="-";
+
+        Features features = new Features();
+        features.setExtractEntities(true);
+        features.setExtractDocumentSentiment(true);
+
+        final AnnotateTextRequest request = new AnnotateTextRequest();
+        request.setDocument(doc);
+        request.setFeatures(features);
+
+        try{
+            AnnotateTextResponse response =
+                    naturalLanguageService.documents()
+                            .annotateText(request).execute();
+
+            entityList = response.getEntities();
+            sentiment = response.getDocumentSentiment().getScore();
+            magnitude = response.getDocumentSentiment().getMagnitude();
+
+            if(sentiment >= -0.1 && sentiment <= 0.1){
+                message = "This text is neutral";
+            }
+            if(sentiment < -0.1){
+                message = "This text is negative";
+            }
+            if(sentiment > 0.1){
+                message = "This text is positive";
+            }
+
+        }catch (java.io.IOException e){
+            e.printStackTrace();
+        }
+
+        return message;
+    }
+
+    public String getSyntax(Document doc, CloudNaturalLanguage naturalLanguageService){
+        String message="-";
+
             try{
-                final AnalyzeSentimentRequest requestS = new AnalyzeSentimentRequest();
-                requestS.setDocument(doc);
                 final AnalyzeSyntaxRequest request = new AnalyzeSyntaxRequest();
                 request.setDocument(doc);
                 // analyze the syntax in the given text
-                AnalyzeSentimentResponse responseS =
-                        naturalLanguageService.documents().
-                                analyzeSentiment(requestS).execute();
                 AnalyzeSyntaxResponse response =
                         naturalLanguageService.documents().
                                 analyzeSyntax(request).execute();
                 // print the response
                 for (Token token : response.getTokens()) {
                     message = token.toPrettyString() + "\n";
+                   // message = message.substring(message.indexOf("\"case\":"), message.indexOf(","))+ "\n";
                             /*("Gender: " + token.getPartOfSpeech().getGender()) +
                             ("\tMood: " + token.getPartOfSpeech().getMood()) +
                             ("\tNumber: " + token.getPartOfSpeech().getNumber()) +
@@ -170,13 +173,13 @@ public class MainActivity extends AppCompatActivity {
                             ("\tnReciprocity: " + token.getPartOfSpeech().getReciprocity()) +
                             ("\tTense: " + token.getPartOfSpeech().getTense()) +
                             ("\tVoice: " + token.getPartOfSpeech().getVoice()) + "\n";*/
-                    Log.i("Syntax", message);
+                    Log.i("Syntax", token.toPrettyString());
                 }
 
-                //return response.getTokens();
-            } catch (java.io.IOException e) {
+            }catch (java.io.IOException e){
                 e.printStackTrace();
             }
+            return message;
     }
 
 }
