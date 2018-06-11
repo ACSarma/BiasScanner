@@ -1,6 +1,5 @@
 package asarmaapps.com.biasscanner;
 
-import android.nfc.Tag;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
@@ -15,20 +14,18 @@ import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 import com.google.api.services.language.v1beta2.CloudNaturalLanguage;
 import com.google.api.services.language.v1beta2.CloudNaturalLanguageRequestInitializer;
-
 import com.google.api.services.language.v1beta2.model.AnalyzeSyntaxRequest;
 import com.google.api.services.language.v1beta2.model.AnalyzeSyntaxResponse;
-import com.google.api.services.language.v1beta2.model.AnalyzeSentimentRequest;
-import com.google.api.services.language.v1beta2.model.AnalyzeSentimentResponse;
 import com.google.api.services.language.v1beta2.model.AnnotateTextRequest;
 import com.google.api.services.language.v1beta2.model.AnnotateTextResponse;
 import com.google.api.services.language.v1beta2.model.Document;
 import com.google.api.services.language.v1beta2.model.Entity;
 import com.google.api.services.language.v1beta2.model.Features;
 import com.google.api.services.language.v1beta2.model.Token;
-//import com.google.cloud.language.v1.LanguageServiceClient;
 
 import java.util.List;
+
+//import com.google.cloud.language.v1.LanguageServiceClient;
 
 public class MainActivity extends AppCompatActivity {
     private final String CLOUD_API_KEY = "AIzaSyDVgwrzDOpJyHu1LAUaDJtekK6jAUcMJgE";
@@ -40,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private String messageSentiment;
     private String messageSyntax;
     private List<Entity> entityList;
+    private String[][] syntaxElements;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -153,6 +151,7 @@ public class MainActivity extends AppCompatActivity {
 
     public String getSyntax(Document doc, CloudNaturalLanguage naturalLanguageService){
         String message="-";
+        String messageR="-";
 
             try{
                 final AnalyzeSyntaxRequest request = new AnalyzeSyntaxRequest();
@@ -163,8 +162,13 @@ public class MainActivity extends AppCompatActivity {
                                 analyzeSyntax(request).execute();
                 // print the response
                 for (Token token : response.getTokens()) {
+                    messageR += token.toPrettyString() + "\n";
                     message = token.toPrettyString() + "\n";
-                   // message = message.substring(message.indexOf("\"case\":"), message.indexOf(","))+ "\n";
+                    message = message.substring(message.indexOf("\"partOfSpeech\":{"));
+                    message = message.substring(0, message.indexOf("}"));
+                    for(int r = 0; r < response.getTokens().size(); r++) {
+                        syntaxElements[r] = message.split(",");
+                    }
                             /*("Gender: " + token.getPartOfSpeech().getGender()) +
                             ("\tMood: " + token.getPartOfSpeech().getMood()) +
                             ("\tNumber: " + token.getPartOfSpeech().getNumber()) +
@@ -173,13 +177,13 @@ public class MainActivity extends AppCompatActivity {
                             ("\tnReciprocity: " + token.getPartOfSpeech().getReciprocity()) +
                             ("\tTense: " + token.getPartOfSpeech().getTense()) +
                             ("\tVoice: " + token.getPartOfSpeech().getVoice()) + "\n";*/
-                    Log.i("Syntax", token.toPrettyString());
+                    Log.i("Syntax", syntaxElements[0][0]);
                 }
 
             }catch (java.io.IOException e){
                 e.printStackTrace();
             }
-            return message;
+            return messageR;
     }
 
 }
