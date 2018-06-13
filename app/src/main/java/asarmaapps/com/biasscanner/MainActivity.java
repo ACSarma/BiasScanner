@@ -23,6 +23,7 @@ import com.google.api.services.language.v1beta2.model.Entity;
 import com.google.api.services.language.v1beta2.model.Features;
 import com.google.api.services.language.v1beta2.model.Token;
 
+import java.util.ArrayList;
 import java.util.List;
 
 //import com.google.cloud.language.v1.LanguageServiceClient;
@@ -37,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private String messageSentiment;
     private String messageSyntax;
     private List<Entity> entityList;
-    private String[][] syntaxElements;
+    private ArrayList<String[]> syntaxElements;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -163,21 +164,14 @@ public class MainActivity extends AppCompatActivity {
                 // print the response
                 for (Token token : response.getTokens()) {
                     messageR += token.toPrettyString() + "\n";
-                    message = token.toPrettyString() + "\n";
-                    message = message.substring(message.indexOf("\"partOfSpeech\":{"));
-                    message = message.substring(0, message.indexOf("}"));
-                    for(int r = 0; r < response.getTokens().size(); r++) {
-                        syntaxElements[r] = message.split(",");
-                    }
-                            /*("Gender: " + token.getPartOfSpeech().getGender()) +
-                            ("\tMood: " + token.getPartOfSpeech().getMood()) +
-                            ("\tNumber: " + token.getPartOfSpeech().getNumber()) +
-                            ("\tPerson: " + token.getPartOfSpeech().getPerson()) +
-                            ("\tProper: " + token.getPartOfSpeech().getProper()) +
-                            ("\tnReciprocity: " + token.getPartOfSpeech().getReciprocity()) +
-                            ("\tTense: " + token.getPartOfSpeech().getTense()) +
-                            ("\tVoice: " + token.getPartOfSpeech().getVoice()) + "\n";*/
-                    Log.i("Syntax", syntaxElements[0][0]);
+                    message += token.getText() + "," +
+                            token.getPartOfSpeech().getCase() + "," +
+                            token.getPartOfSpeech().getMood() + "," +
+                            token.getPartOfSpeech().getPerson() + "," +
+                            token.getPartOfSpeech().getTense() + "," +
+                            token.getPartOfSpeech().getVoice();
+                    syntaxElements.add(message.split(","));
+                    Log.i("Syntax", message);
                 }
 
             }catch (java.io.IOException e){
