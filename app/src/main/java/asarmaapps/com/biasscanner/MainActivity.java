@@ -43,9 +43,13 @@ public class MainActivity extends AppCompatActivity {
     private String messageSentiment;
     private String messageSyntax;
     private List<Entity> entityList;
-    private ArrayList<String[]> syntaxElements;
-    private String[] overallAnalysis;
-
+    private ArrayList<String[]> syntaxElements = new ArrayList<>();
+    private String[] overallAnalysis = {"The author of this passage potential purpose is to ",
+                                        "The author\'s attitude towards the topics can be described as ",
+                                        "This passage is written from ",
+                                        "in this tense: ",
+                                        "with this voice: "};
+    private boolean[] hasAttribute = new boolean[overallAnalysis.length];
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,7 +57,6 @@ public class MainActivity extends AppCompatActivity {
         textView = findViewById(R.id.speech_to_text_result);
         resultText = findViewById(R.id.result);
         editText = findViewById(R.id.editText);
-        overallAnalysis = new String[5];
         Button enterButton = findViewById(R.id.browse_button);
         enterButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -92,16 +95,10 @@ public class MainActivity extends AppCompatActivity {
                         messageSyntax = (getSyntax(document, naturalLanguageService));
                         messageSentiment = (getSentiment(document, naturalLanguageService));
                         goAnalyze();
-                       /* tryLanguage(document.toPrettyString());*/
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                resultText.setText(messageSyntax);
-                                String entities = "";
-                                for (Entity entity : entityList) {
-                                    entities += "\n" + entity.getName().toUpperCase() + " " + entity.getSalience();
-                                }
-                                resultText.setText("This audio file talks about :\"\n" + entities + "\"\\n\"" + messageSyntax);
+                               /* resultText.setText("This passage has " + messageSentiment + "about :\"\n" + entities + "\"\\n\"" + messageSyntax);*/
                                 /*AlertDialog dialog =
                                         new AlertDialog.Builder(MainActivity.this)
                                                 .setTitle("Sentiment: " + sentiment + " Mag: " + magnitude)
@@ -123,8 +120,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public String getSentiment(Document doc, CloudNaturalLanguage naturalLanguageService){
-        String message="-";
-
         Features features = new Features();
         features.setExtractEntities(true);
         features.setExtractDocumentSentiment(true);
@@ -142,20 +137,27 @@ public class MainActivity extends AppCompatActivity {
             magnitude = response.getDocumentSentiment().getMagnitude();
 
             if(sentiment >= -0.1 && sentiment <= 0.1){
-                message = "This text is neutral";
+                messageSentiment = "neutral";
+                if(magnitude !=0.0){
+                    messageSentiment = "mixed feelings";
+                }
             }
             if(sentiment < -0.1){
-                message = "This text is negative";
+                messageSentiment = "negative";
+                if(magnitude > 4.0){
+                    messageSentiment = "strongly " + messageSentiment;
+                }
             }
             if(sentiment > 0.1){
-                message = "This text is positive";
+                messageSentiment = "positive";
+                if(magnitude > 4.0){
+                    messageSentiment = "strongly " + messageSentiment;
+                }
             }
-
         }catch (java.io.IOException e){
             e.printStackTrace();
         }
-
-        return message;
+        return messageSentiment;
     }
 
     public String getSyntax(Document doc, CloudNaturalLanguage naturalLanguageService){
@@ -182,43 +184,29 @@ public class MainActivity extends AppCompatActivity {
                     Log.i("Syntax", message);
                 }
 
-            }catch (java.io.IOException e){
+            }catch (java.io.IOException e) {
                 e.printStackTrace();
             }
             return message;
     }
 
     public void goAnalyze (){
+        String entities = "";
+        for (Entity entity : entityList) {
+            entities += "\n" + entity.getName().toUpperCase() + " " + entity.getSalience();
+        }
         for(int i=0; i<syntaxElements.size(); i++){
             for(int r=0; r<syntaxElements.get(i).length; r++){
                 while(!syntaxElements.get(i)[r].contains("UNKNOWN")){
-                    overallAnalysis[r] += syntaxElements.get(i)[r];
+                    overallAnalysis[r] += syntaxElements.get(i)[r] + ", ";
+                    hasAttribute[r] = true;
                 }
+            }
+        }
+        for (int b=0; b<hasAttribute.length; b++){
+            if(hasAttribute[b] == false){
+                overallAnalysis[b] = "";
             }
         }
     }
-
-   /* public void tryLanguage(String doc) {
-        try {
-            LanguageServiceClient language = LanguageServiceClient.create(); {
-                // set content to the text string
-                Document doc2 = Document.newBuilder()
-                        .setContent(doc)
-                        .setType(com.google.cloud.language.v1.Document.Type.PLAIN_TEXT)
-                        .build();
-                ClassifyTextRequest request = ClassifyTextRequest.newBuilder()
-                        .setDocument(doc2)
-                        .build();
-                // detect categories in the given text
-                ClassifyTextResponse response = language.classifyText(request);
-
-                for (ClassificationCategory category : response.getCategoriesList()) {
-                    System.out.printf("Category name : %s, Confidence : %.3f\n",
-                            category.getName(), category.getConfidence());
-                }
-            }
-        } catch (java.io.IOException e) {
-            e.printStackTrace();
-        }
-    }*/
 }
