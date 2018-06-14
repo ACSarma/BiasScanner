@@ -26,7 +26,12 @@ import com.google.api.services.language.v1beta2.model.Token;
 import java.util.ArrayList;
 import java.util.List;
 
-//import com.google.cloud.language.v1.LanguageServiceClient;
+/*
+import com.google.cloud.language.v1.ClassificationCategory;
+import com.google.cloud.language.v1.ClassifyTextRequest;
+import com.google.cloud.language.v1.ClassifyTextResponse;
+import com.google.cloud.language.v1.LanguageServiceClient;
+*/
 
 public class MainActivity extends AppCompatActivity {
     private final String CLOUD_API_KEY = "AIzaSyDVgwrzDOpJyHu1LAUaDJtekK6jAUcMJgE";
@@ -39,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private String messageSyntax;
     private List<Entity> entityList;
     private ArrayList<String[]> syntaxElements;
+    private String[] overallAnalysis;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
         textView = findViewById(R.id.speech_to_text_result);
         resultText = findViewById(R.id.result);
         editText = findViewById(R.id.editText);
-
+        overallAnalysis = new String[5];
         Button enterButton = findViewById(R.id.browse_button);
         enterButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -85,6 +91,8 @@ public class MainActivity extends AppCompatActivity {
                      try{
                         messageSyntax = (getSyntax(document, naturalLanguageService));
                         messageSentiment = (getSentiment(document, naturalLanguageService));
+                        goAnalyze();
+                       /* tryLanguage(document.toPrettyString());*/
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -93,14 +101,15 @@ public class MainActivity extends AppCompatActivity {
                                 for (Entity entity : entityList) {
                                     entities += "\n" + entity.getName().toUpperCase() + " " + entity.getSalience();
                                 }
-                                AlertDialog dialog =
+                                resultText.setText("This audio file talks about :\"\n" + entities + "\"\\n\"" + messageSyntax);
+                                /*AlertDialog dialog =
                                         new AlertDialog.Builder(MainActivity.this)
                                                 .setTitle("Sentiment: " + sentiment + " Mag: " + magnitude)
                                                 .setMessage(messageSentiment+ "\n" + "This audio file talks about :"
                                                         + entities + "\n" + messageSyntax)
                                                 .setNeutralButton("Okay", null)
                                                 .create();
-                                dialog.show();
+                                dialog.show();*/
                             }
                         });
                      }catch (Exception  IOException){
@@ -128,7 +137,6 @@ public class MainActivity extends AppCompatActivity {
             AnnotateTextResponse response =
                     naturalLanguageService.documents()
                             .annotateText(request).execute();
-
             entityList = response.getEntities();
             sentiment = response.getDocumentSentiment().getScore();
             magnitude = response.getDocumentSentiment().getMagnitude();
@@ -177,7 +185,40 @@ public class MainActivity extends AppCompatActivity {
             }catch (java.io.IOException e){
                 e.printStackTrace();
             }
-            return messageR;
+            return message;
     }
 
+    public void goAnalyze (){
+        for(int i=0; i<syntaxElements.size(); i++){
+            for(int r=0; r<syntaxElements.get(i).length; r++){
+                while(!syntaxElements.get(i)[r].contains("UNKNOWN")){
+                    overallAnalysis[r] += syntaxElements.get(i)[r];
+                }
+            }
+        }
+    }
+
+   /* public void tryLanguage(String doc) {
+        try {
+            LanguageServiceClient language = LanguageServiceClient.create(); {
+                // set content to the text string
+                Document doc2 = Document.newBuilder()
+                        .setContent(doc)
+                        .setType(com.google.cloud.language.v1.Document.Type.PLAIN_TEXT)
+                        .build();
+                ClassifyTextRequest request = ClassifyTextRequest.newBuilder()
+                        .setDocument(doc2)
+                        .build();
+                // detect categories in the given text
+                ClassifyTextResponse response = language.classifyText(request);
+
+                for (ClassificationCategory category : response.getCategoriesList()) {
+                    System.out.printf("Category name : %s, Confidence : %.3f\n",
+                            category.getName(), category.getConfidence());
+                }
+            }
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+    }*/
 }

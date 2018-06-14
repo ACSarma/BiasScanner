@@ -40,7 +40,7 @@ dependencies {
     compile 'com.google.apis:google-api-services-speech:v1beta1-rev336-1.22.0'
     compile 'com.google.apis:google-api-services-language:v1beta2-rev6-1.22.0'
     compile 'com.google.code.findbugs:jsr305:2.0.1'
-   // compile 'com.google.cloud:google-cloud-language:1.31.0'
+    //compile 'com.google.cloud:google-cloud-language:1.31.0'
     implementation('com.google.api-client:google-api-client-android:1.20.0') {
         exclude module: 'guava-jdk5'
     }
