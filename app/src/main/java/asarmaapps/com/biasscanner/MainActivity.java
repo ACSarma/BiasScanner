@@ -94,18 +94,24 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                      try{
                         messageSyntax = (getSyntax(document, naturalLanguageService));
+                        Log.i("Syntax", "Done1");
                         messageSentiment = (getSentiment(document, naturalLanguageService));
+                         Log.i("Sentiment", "Done2");
                         goAnalyze();
+                         Log.i("Analyze", "Done3");
+                         String message = "This passage has " + messageSentiment + "about " + topEntity + "." +
+                                 "\n" + messageSyntax;
+                         resultText.setText(message);
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                resultText.setText("This passage has " + messageSentiment + "about " + topEntity + "." +
-                                        "\n" + messageSyntax);
+                                String message = "This passage has " + messageSentiment + "about " + topEntity + "." +
+                                        "\n" + messageSyntax;
+                                resultText.setText(message);
                                 /*AlertDialog dialog =
                                         new AlertDialog.Builder(MainActivity.this)
                                                 .setTitle("Sentiment: " + sentiment + " Mag: " + magnitude)
-                                                .setMessage(messageSentiment+ "\n" + "This audio file talks about :"
-                                                        + entities + "\n" + messageSyntax)
+                                                .setMessage(message)
                                                 .setNeutralButton("Okay", null)
                                                 .create();
                                 dialog.show();*/
@@ -183,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
                             token.getPartOfSpeech().getTense() + "," +
                             token.getPartOfSpeech().getVoice();
                     syntaxElements.add(message.split(","));
-                    Log.i("Syntax", message);
+                  //  Log.i("Syntax", message);
                 }
 
             }catch (java.io.IOException e) {
@@ -197,15 +203,18 @@ public class MainActivity extends AppCompatActivity {
         for (Entity entity : entityList) {
             entities += "\n" + entity.getName().toUpperCase() + " " + entity.getSalience();
         }
+        Log.i("AnalysisE", "Done!");
         topEntity = entities.substring(0,entities.indexOf(" "));
         for(int i=0; i<syntaxElements.size(); i++){
             for(int r=0; r<syntaxElements.get(i).length; r++){
                 while(!syntaxElements.get(i)[r].contains("UNKNOWN")){
                     overallAnalysis[r] += syntaxElements.get(i)[r] + ", ";
                     hasAttribute[r] = true;
+                    break;
                 }
             }
         }
+        Log.i("AnalysisW", "Done!");
         for (int b=0; b<hasAttribute.length; b++){
             if(hasAttribute[b] == false){
                 overallAnalysis[b] = "";
