@@ -42,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private float magnitude;
     private String messageSentiment;
     private String messageSyntax;
+    private String topEntity;
     private List<Entity> entityList;
     private ArrayList<String[]> syntaxElements = new ArrayList<>();
     private String[] overallAnalysis = {"The author of this passage potential purpose is to ",
@@ -98,7 +99,8 @@ public class MainActivity extends AppCompatActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                               /* resultText.setText("This passage has " + messageSentiment + "about :\"\n" + entities + "\"\\n\"" + messageSyntax);*/
+                                resultText.setText("This passage has " + messageSentiment + "about " + topEntity + "." +
+                                        "\n" + messageSyntax);
                                 /*AlertDialog dialog =
                                         new AlertDialog.Builder(MainActivity.this)
                                                 .setTitle("Sentiment: " + sentiment + " Mag: " + magnitude)
@@ -195,6 +197,7 @@ public class MainActivity extends AppCompatActivity {
         for (Entity entity : entityList) {
             entities += "\n" + entity.getName().toUpperCase() + " " + entity.getSalience();
         }
+        topEntity = entities.substring(0,entities.indexOf(" "));
         for(int i=0; i<syntaxElements.size(); i++){
             for(int r=0; r<syntaxElements.get(i).length; r++){
                 while(!syntaxElements.get(i)[r].contains("UNKNOWN")){
@@ -207,6 +210,9 @@ public class MainActivity extends AppCompatActivity {
             if(hasAttribute[b] == false){
                 overallAnalysis[b] = "";
             }
+        }
+        for(int s=0; s<overallAnalysis.length; s++){
+            messageSyntax += overallAnalysis[s] + "\n";
         }
     }
 }
