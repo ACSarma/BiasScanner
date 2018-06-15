@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.google.api.client.extensions.android.http.AndroidHttp;
@@ -106,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 String message = "This passage has " + messageSentiment + "about " + topEntity + "." +
-                                        "\n" + messageSyntax;
+                                        "\n"/* + messageSyntax*/;
                                 resultText.setText(message);
                                 /*AlertDialog dialog =
                                         new AlertDialog.Builder(MainActivity.this)
@@ -204,15 +205,16 @@ public class MainActivity extends AppCompatActivity {
             entities += "\n" + entity.getName().toUpperCase() + " " + entity.getSalience();
         }
         Log.i("AnalysisE", "Done!");
-        topEntity = entities.substring(0,entities.indexOf(" "));
+        //topEntity = entities.substring(0,entities.indexOf(" "));
         for(int i=0; i<syntaxElements.size(); i++){
             for(int r=0; r<syntaxElements.get(i).length; r++){
-                while(!syntaxElements.get(i)[r].contains("UNKNOWN")){
+                if(!syntaxElements.get(i)[r].contains("UNKNOWN")){
                     overallAnalysis[r] += syntaxElements.get(i)[r] + ", ";
                     hasAttribute[r] = true;
-                    break;
                 }
+                /*Log.i("AnalysisW", "Done!");*/
             }
+            /*Log.i("AnalysisW", "Done!");*/
         }
         Log.i("AnalysisW", "Done!");
         for (int b=0; b<hasAttribute.length; b++){
@@ -223,5 +225,6 @@ public class MainActivity extends AppCompatActivity {
         for(int s=0; s<overallAnalysis.length; s++){
             messageSyntax += overallAnalysis[s] + "\n";
         }
+        return;
     }
 }
