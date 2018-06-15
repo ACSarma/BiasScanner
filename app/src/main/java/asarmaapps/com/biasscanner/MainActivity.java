@@ -100,14 +100,14 @@ public class MainActivity extends AppCompatActivity {
                          Log.i("Sentiment", "Done2");
                         goAnalyze();
                          Log.i("Analyze", "Done3");
-                         String message = "This passage has " + messageSentiment + "about " + topEntity + "." +
+                         /*String message = "This passage has " + messageSentiment + " about " + topEntity + "." +
                                  "\n" + messageSyntax;
-                         resultText.setText(message);
+                         resultText.setText(message);*/
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                String message = "This passage has " + messageSentiment + "about " + topEntity + "." +
-                                        "\n"/* + messageSyntax*/;
+                                String message = "This passage has " + messageSentiment + " about " + topEntity + "." +
+                                        "\n" + messageSyntax;
                                 resultText.setText(message);
                                 /*AlertDialog dialog =
                                         new AlertDialog.Builder(MainActivity.this)
@@ -183,12 +183,14 @@ public class MainActivity extends AppCompatActivity {
                 // print the response
                 for (Token token : response.getTokens()) {
                     messageR += token.toPrettyString() + "\n";
-                    message += token.getText() + "," +
+                    Log.i("getText", token.getText().getContent());
+                    message = token.getText().getContent() + "," +
                             token.getPartOfSpeech().getCase() + "," +
                             token.getPartOfSpeech().getMood() + "," +
                             token.getPartOfSpeech().getPerson() + "," +
                             token.getPartOfSpeech().getTense() + "," +
                             token.getPartOfSpeech().getVoice();
+                    Log.i("message", message);
                     syntaxElements.add(message.split(","));
                   //  Log.i("Syntax", message);
                 }
@@ -201,20 +203,29 @@ public class MainActivity extends AppCompatActivity {
 
     public void goAnalyze (){
         String entities = "";
-        for (Entity entity : entityList) {
-            entities += "\n" + entity.getName().toUpperCase() + " " + entity.getSalience();
-        }
-        Log.i("AnalysisE", "Done!");
-        //topEntity = entities.substring(0,entities.indexOf(" "));
-        for(int i=0; i<syntaxElements.size(); i++){
-            for(int r=0; r<syntaxElements.get(i).length; r++){
-                if(!syntaxElements.get(i)[r].contains("UNKNOWN")){
-                    overallAnalysis[r] += syntaxElements.get(i)[r] + ", ";
-                    hasAttribute[r] = true;
-                }
-                /*Log.i("AnalysisW", "Done!");*/
+        Log.i("SizeE", ""+entityList.size());
+        if(entityList.size()>0) {
+            for (Entity entity : entityList) {
+                entities += "\n" + entity.getName().toUpperCase() + " " + entity.getSalience();
             }
-            /*Log.i("AnalysisW", "Done!");*/
+            Log.i("AnalysisE", entityList.get(0).getName());
+            topEntity = entities.substring(0, entities.indexOf(" "));
+            Log.i("Entity", topEntity);
+        }
+        Log.i("Size", ""+syntaxElements.size());
+        for(int i=0; i<syntaxElements.size(); i++){
+            Log.i("ArraySize", ""+syntaxElements.get(i).length);
+            int counter = 0;
+            for(int r=0; r<syntaxElements.get(i).length; r++){
+                if(syntaxElements.get(i)[r].indexOf("UNKNOWN") == -1){
+                    overallAnalysis[counter] += syntaxElements.get(i)[r] + ", ";
+                    Log.i("Data", syntaxElements.get(i)[r]);
+                    hasAttribute[counter] = true;
+                    counter++;
+                }
+                Log.i("AnalysisW", "Loop2");
+            }
+            Log.i("AnalysisW", "Loop1");
         }
         Log.i("AnalysisW", "Done!");
         for (int b=0; b<hasAttribute.length; b++){
