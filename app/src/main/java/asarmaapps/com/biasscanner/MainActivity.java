@@ -46,8 +46,8 @@ public class MainActivity extends AppCompatActivity {
     private String topEntity;
     private List<Entity> entityList;
     private ArrayList<String[]> syntaxElements = new ArrayList<>();
-    private String[] overallAnalysis = {"The author of this passage potential purpose is to ",
-                                        "The author\'s attitude towards the topics can be described as ",
+    private String[] overallAnalysis = {"In this passage, the author is very:  ",
+                                        "The author\'s attitude towards the topics can be described as: ",
                                         "This passage is written from ",
                                         "in this tense: ",
                                         "with this voice: "};
@@ -97,12 +97,9 @@ public class MainActivity extends AppCompatActivity {
                         messageSyntax = (getSyntax(document, naturalLanguageService));
                         Log.i("Syntax", "Done1");
                         messageSentiment = (getSentiment(document, naturalLanguageService));
-                         Log.i("Sentiment", "Done2");
+                        Log.i("Sentiment", "Done2");
                         goAnalyze();
-                         Log.i("Analyze", "Done3");
-                         /*String message = "This passage has " + messageSentiment + " about " + topEntity + "." +
-                                 "\n" + messageSyntax;
-                         resultText.setText(message);*/
+                        Log.i("Analyze", "Done3");
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -146,19 +143,19 @@ public class MainActivity extends AppCompatActivity {
             magnitude = response.getDocumentSentiment().getMagnitude();
 
             if(sentiment >= -0.1 && sentiment <= 0.1){
-                messageSentiment = "neutral";
+                messageSentiment = "neutral feelings";
                 if(magnitude !=0.0){
                     messageSentiment = "mixed feelings";
                 }
             }
             if(sentiment < -0.1){
-                messageSentiment = "negative";
+                messageSentiment = "negative feelings";
                 if(magnitude > 4.0){
                     messageSentiment = "strongly " + messageSentiment;
                 }
             }
             if(sentiment > 0.1){
-                messageSentiment = "positive";
+                messageSentiment = "positive feelings";
                 if(magnitude > 4.0){
                     messageSentiment = "strongly " + messageSentiment;
                 }
@@ -184,16 +181,42 @@ public class MainActivity extends AppCompatActivity {
                 for (Token token : response.getTokens()) {
                     messageR += token.toPrettyString() + "\n";
                     Log.i("getText", token.getText().getContent());
-                    message = token.getText().getContent() + "," +
+                    /*message = token.getText().getContent() + "," +
                             token.getPartOfSpeech().getCase() + "," +
                             token.getPartOfSpeech().getMood() + "," +
                             token.getPartOfSpeech().getPerson() + "," +
                             token.getPartOfSpeech().getTense() + "," +
-                            token.getPartOfSpeech().getVoice();
+                            token.getPartOfSpeech().getVoice();*/
+                    if(!token.getPartOfSpeech().getCase().equalsIgnoreCase("CASE_UNKNOWN")){
+                        if(!overallAnalysis[0].contains(token.getPartOfSpeech().getCase())) {
+                            overallAnalysis[0] += token.getPartOfSpeech().getCase() + " ";
+                        }
+                    }
+                    if(!token.getPartOfSpeech().getMood().equalsIgnoreCase("MOOD_UNKNOWN")){
+                        if(!overallAnalysis[1].contains(token.getPartOfSpeech().getMood())) {
+                            overallAnalysis[1] += token.getPartOfSpeech().getMood() + " ";
+                        }
+                    }
+                    if(!token.getPartOfSpeech().getPerson().equalsIgnoreCase("PERSON_UNKNOWN")){
+                        if(!overallAnalysis[2].contains(token.getPartOfSpeech().getPerson())) {
+                            overallAnalysis[2] += token.getPartOfSpeech().getPerson() + " ";
+                        }                    }
+                    if(!token.getPartOfSpeech().getTense().equalsIgnoreCase("TENSE_UNKNOWN")){
+                        if(!overallAnalysis[3].contains(token.getPartOfSpeech().getTense())) {
+                            overallAnalysis[3] += token.getPartOfSpeech().getTense() + " ";
+                        }                    }
+                    if(!token.getPartOfSpeech().getVoice().equalsIgnoreCase("VOICE_UNKNOWN")){
+                        if(!overallAnalysis[4].contains(token.getPartOfSpeech().getVoice())) {
+                            overallAnalysis[4] += token.getPartOfSpeech().getVoice() + " ";
+                        }
+                    }
                     Log.i("message", message);
                     syntaxElements.add(message.split(","));
                   //  Log.i("Syntax", message);
                 }
+                overallAnalysis[2] += "person.";
+                overallAnalysis[3] += "tense.";
+                overallAnalysis[4] += "voice. ";
 
             }catch (java.io.IOException e) {
                 e.printStackTrace();
@@ -206,18 +229,18 @@ public class MainActivity extends AppCompatActivity {
         Log.i("SizeE", ""+entityList.size());
         if(entityList.size()>0) {
             for (Entity entity : entityList) {
-                entities += "\n" + entity.getName().toUpperCase() + " " + entity.getSalience();
+                entities += entity.getName().toUpperCase() + " " + entity.getSalience() + "\n";
             }
             Log.i("AnalysisE", entityList.get(0).getName());
             topEntity = entities.substring(0, entities.indexOf(" "));
             Log.i("Entity", topEntity);
         }
-        Log.i("Size", ""+syntaxElements.size());
+       /* Log.i("Size", ""+syntaxElements.size());
         for(int i=0; i<syntaxElements.size(); i++){
             Log.i("ArraySize", ""+syntaxElements.get(i).length);
             int counter = 0;
             for(int r=0; r<syntaxElements.get(i).length; r++){
-                if(syntaxElements.get(i)[r].indexOf("UNKNOWN") == -1){
+                if(!syntaxElements.get(i)[r].contains("_UNKNOWN")){
                     overallAnalysis[counter] += syntaxElements.get(i)[r] + ", ";
                     Log.i("Data", syntaxElements.get(i)[r]);
                     hasAttribute[counter] = true;
@@ -232,9 +255,10 @@ public class MainActivity extends AppCompatActivity {
             if(hasAttribute[b] == false){
                 overallAnalysis[b] = "";
             }
-        }
+        }*/
         for(int s=0; s<overallAnalysis.length; s++){
             messageSyntax += overallAnalysis[s] + "\n";
+            Log.i("Final MSG", messageSyntax);
         }
         return;
     }
