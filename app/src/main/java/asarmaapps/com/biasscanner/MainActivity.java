@@ -1,9 +1,14 @@
 package asarmaapps.com.biasscanner;
 
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
+import android.text.Spannable;
+import android.text.style.BackgroundColorSpan;
+import android.text.style.UnderlineSpan;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -26,6 +31,8 @@ import com.google.api.services.language.v1beta2.model.Token;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /*
 import com.google.cloud.language.v1.ClassificationCategory;
@@ -44,14 +51,18 @@ public class MainActivity extends AppCompatActivity {
     private String messageSentiment;
     private String messageSyntax;
     private String topEntity;
+    private String transcript;
     private List<Entity> entityList;
     private ArrayList<String[]> syntaxElements = new ArrayList<>();
-    private String[] overallAnalysis = {"In this passage, the author is very:  ",
-                                        "The author\'s attitude towards the topics can be described as: ",
-                                        "This passage is written from ",
-                                        "in this tense: ",
-                                        "with this voice: "};
-    private boolean[] hasAttribute = new boolean[overallAnalysis.length];
+    private ArrayList<String> highlightedWords = new ArrayList<>();
+    private ArrayList<Integer> colors = new ArrayList<>();
+    private String[] overallAnalysis = {
+            "This indicates a ",
+            "The author\'s attitude towards the topics can be described as: ",
+            "This passage is written from ",
+            "in this tense: ",
+            "with this voice: "};
+    private ToneWords toneWords = new ToneWords();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,8 +92,7 @@ public class MainActivity extends AppCompatActivity {
                                 new CloudNaturalLanguageRequestInitializer(CLOUD_API_KEY)
                         ).build();
 
-                String transcript =
-                        ((TextView)findViewById(R.id.speech_to_text_result))
+                transcript = ((TextView)findViewById(R.id.speech_to_text_result))
                                 .getText().toString();
 
                 final Document document = new Document();
@@ -94,11 +104,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                      try{
-                        messageSyntax = (getSyntax(document, naturalLanguageService));
+                        getSyntax(document, naturalLanguageService);
                         Log.i("Syntax", "Done1");
                         messageSentiment = (getSentiment(document, naturalLanguageService));
                         Log.i("Sentiment", "Done2");
-                        goAnalyze();
+                        finishMessage();
                         Log.i("Analyze", "Done3");
                         runOnUiThread(new Runnable() {
                             @Override
@@ -106,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
                                 String message = "This passage has " + messageSentiment + " about " + topEntity + "." +
                                         "\n" + messageSyntax;
                                 resultText.setText(message);
+                                textView.setText(highlightSearchKey(transcript));
                                 /*AlertDialog dialog =
                                         new AlertDialog.Builder(MainActivity.this)
                                                 .setTitle("Sentiment: " + sentiment + " Mag: " + magnitude)
@@ -123,6 +134,25 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         });
+    }
+
+    public void updateOverall(){
+        Spannable  highlight;
+        int        word_index;
+        String     title_str;
+
+        word_index = overallAnalysis.length;
+        for(int i=0; i<word_index; i++) {
+            String s = overallAnalysis[i];
+            title_str = Html.fromHtml(s).toString();
+            highlight = (Spannable) Html.fromHtml(s);
+            highlight.setSpan(
+                    new BackgroundColorSpan(colors.get(i)),
+                    0,
+                    title_str.length(),
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+
     }
 
     public String getSentiment(Document doc, CloudNaturalLanguage naturalLanguageService){
@@ -147,28 +177,31 @@ public class MainActivity extends AppCompatActivity {
                 if(magnitude !=0.0){
                     messageSentiment = "mixed feelings";
                 }
+                overallAnalysis[0] += toneWords.getWords("neut");
             }
             if(sentiment < -0.1){
                 messageSentiment = "negative feelings";
                 if(magnitude > 4.0){
                     messageSentiment = "strongly " + messageSentiment;
                 }
+                overallAnalysis[0] += toneWords.getWords("neg");
             }
             if(sentiment > 0.1){
                 messageSentiment = "positive feelings";
                 if(magnitude > 4.0){
                     messageSentiment = "strongly " + messageSentiment;
                 }
+                overallAnalysis[0] += toneWords.getWords("pos");
             }
         }catch (java.io.IOException e){
             e.printStackTrace();
         }
+        overallAnalysis[0] += "tone.";
         return messageSentiment;
     }
 
-    public String getSyntax(Document doc, CloudNaturalLanguage naturalLanguageService){
-        String message="-";
-        String messageR="-";
+    public void getSyntax(Document doc, CloudNaturalLanguage naturalLanguageService){
+        String message="";
 
             try{
                 final AnalyzeSyntaxRequest request = new AnalyzeSyntaxRequest();
@@ -179,53 +212,51 @@ public class MainActivity extends AppCompatActivity {
                                 analyzeSyntax(request).execute();
                 // print the response
                 for (Token token : response.getTokens()) {
-                    messageR += token.toPrettyString() + "\n";
+                    message += token.toPrettyString() + "\n";
                     Log.i("getText", token.getText().getContent());
-                    /*message = token.getText().getContent() + "," +
-                            token.getPartOfSpeech().getCase() + "," +
-                            token.getPartOfSpeech().getMood() + "," +
-                            token.getPartOfSpeech().getPerson() + "," +
-                            token.getPartOfSpeech().getTense() + "," +
-                            token.getPartOfSpeech().getVoice();*/
-                    if(!token.getPartOfSpeech().getCase().equalsIgnoreCase("CASE_UNKNOWN")){
-                        if(!overallAnalysis[0].contains(token.getPartOfSpeech().getCase())) {
-                            overallAnalysis[0] += token.getPartOfSpeech().getCase() + " ";
-                        }
-                    }
                     if(!token.getPartOfSpeech().getMood().equalsIgnoreCase("MOOD_UNKNOWN")){
                         if(!overallAnalysis[1].contains(token.getPartOfSpeech().getMood())) {
                             overallAnalysis[1] += token.getPartOfSpeech().getMood() + " ";
                         }
+                        highlightedWords.add(token.getText().getContent());
+                        colors.add((Color.CYAN));
                     }
                     if(!token.getPartOfSpeech().getPerson().equalsIgnoreCase("PERSON_UNKNOWN")){
                         if(!overallAnalysis[2].contains(token.getPartOfSpeech().getPerson())) {
                             overallAnalysis[2] += token.getPartOfSpeech().getPerson() + " ";
-                        }                    }
+                        }
+                        highlightedWords.add(token.getText().getContent());
+                        colors.add((Color.YELLOW));
+                    }
                     if(!token.getPartOfSpeech().getTense().equalsIgnoreCase("TENSE_UNKNOWN")){
                         if(!overallAnalysis[3].contains(token.getPartOfSpeech().getTense())) {
                             overallAnalysis[3] += token.getPartOfSpeech().getTense() + " ";
-                        }                    }
+                            highlightedWords.add(token.getText().getContent());
+                            colors.add((Color.LTGRAY));
+                        }
+                    }
                     if(!token.getPartOfSpeech().getVoice().equalsIgnoreCase("VOICE_UNKNOWN")){
                         if(!overallAnalysis[4].contains(token.getPartOfSpeech().getVoice())) {
                             overallAnalysis[4] += token.getPartOfSpeech().getVoice() + " ";
                         }
+                        highlightedWords.add(token.getText().getContent());
+                        colors.add((Color.RED));
                     }
                     Log.i("message", message);
                     syntaxElements.add(message.split(","));
                   //  Log.i("Syntax", message);
                 }
                 overallAnalysis[2] += "person.";
-                overallAnalysis[3] += "tense.";
                 overallAnalysis[4] += "voice. ";
 
             }catch (java.io.IOException e) {
                 e.printStackTrace();
             }
-            return message;
     }
 
-    public void goAnalyze (){
+    public void finishMessage (){
         String entities = "";
+        messageSyntax = "";
         Log.i("SizeE", ""+entityList.size());
         if(entityList.size()>0) {
             for (Entity entity : entityList) {
@@ -235,31 +266,33 @@ public class MainActivity extends AppCompatActivity {
             topEntity = entities.substring(0, entities.indexOf(" "));
             Log.i("Entity", topEntity);
         }
-       /* Log.i("Size", ""+syntaxElements.size());
-        for(int i=0; i<syntaxElements.size(); i++){
-            Log.i("ArraySize", ""+syntaxElements.get(i).length);
-            int counter = 0;
-            for(int r=0; r<syntaxElements.get(i).length; r++){
-                if(!syntaxElements.get(i)[r].contains("_UNKNOWN")){
-                    overallAnalysis[counter] += syntaxElements.get(i)[r] + ", ";
-                    Log.i("Data", syntaxElements.get(i)[r]);
-                    hasAttribute[counter] = true;
-                    counter++;
-                }
-                Log.i("AnalysisW", "Loop2");
-            }
-            Log.i("AnalysisW", "Loop1");
-        }
-        Log.i("AnalysisW", "Done!");
-        for (int b=0; b<hasAttribute.length; b++){
-            if(hasAttribute[b] == false){
-                overallAnalysis[b] = "";
-            }
-        }*/
         for(int s=0; s<overallAnalysis.length; s++){
             messageSyntax += overallAnalysis[s] + "\n";
             Log.i("Final MSG", messageSyntax);
         }
-        return;
+    }
+
+    private Spannable highlightSearchKey(String title) {
+        Spannable  highlight;
+        Pattern pattern;
+        Matcher matcher;
+        int        word_index;
+        String     title_str;
+
+        word_index = highlightedWords.size();
+        title_str  = Html.fromHtml(title).toString();
+        highlight  = (Spannable) Html.fromHtml(title);
+        for (int index = 0; index < word_index; index++) {
+            pattern = Pattern.compile("(?i)" + highlightedWords.get(index));
+            matcher = pattern.matcher(title_str);
+            while (matcher.find()) {
+                highlight.setSpan(
+                        new BackgroundColorSpan(colors.get(index)),
+                        matcher.start(),
+                        matcher.end(),
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+        }
+        return highlight;
     }
 }
