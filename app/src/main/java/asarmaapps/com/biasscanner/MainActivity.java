@@ -1,19 +1,18 @@
 package asarmaapps.com.biasscanner;
 
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.text.Spannable;
 import android.text.style.BackgroundColorSpan;
-import android.text.style.UnderlineSpan;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.google.api.client.extensions.android.http.AndroidHttp;
@@ -28,6 +27,8 @@ import com.google.api.services.language.v1beta2.model.Document;
 import com.google.api.services.language.v1beta2.model.Entity;
 import com.google.api.services.language.v1beta2.model.Features;
 import com.google.api.services.language.v1beta2.model.Token;
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +46,11 @@ public class MainActivity extends AppCompatActivity {
     private final String CLOUD_API_KEY = "AIzaSyDVgwrzDOpJyHu1LAUaDJtekK6jAUcMJgE";
     private TextView textView;
     private TextView resultText;
+    private TextView t1;
+    private TextView t2;
+    private TextView t3;
+    private TextView t4;
+    private TextView t5;
     private EditText editText;
     private float sentiment;
     private float magnitude;
@@ -66,15 +72,25 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            setContentView(R.layout.landscape);
+        }else{
+            setContentView(R.layout.portrait);
+        }
         textView = findViewById(R.id.speech_to_text_result);
-        resultText = findViewById(R.id.result);
+        resultText = findViewById(R.id.result0);
+        t1 = findViewById(R.id.result1);
+        t2 = findViewById(R.id.result2);
+        t3 = findViewById(R.id.result3);
+        t4 = findViewById(R.id.result4);
+        t5 = findViewById(R.id.result5);
         editText = findViewById(R.id.editText);
         Button enterButton = findViewById(R.id.browse_button);
         enterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 textView.setText(editText.getText());
+                editText.setText("");
             }
         });
 
@@ -115,8 +131,19 @@ public class MainActivity extends AppCompatActivity {
                             public void run() {
                                 String message = "This passage has " + messageSentiment + " about " + topEntity + "." +
                                         "\n" + messageSyntax;
-                                resultText.setText(message);
+                                resultText.setText("This passage has " + messageSentiment + " about " + topEntity + "." +
+                                        "\n" + overallAnalysis[0]);
+                                t2.setText(overallAnalysis[1]);
+                                t2.setBackgroundColor(getColor(R.color.c1));
+                                t3.setText(overallAnalysis[2]);
+                                t3.setBackgroundColor(getColor(R.color.c2));
+                                t4.setText(overallAnalysis[3]);
+                                t4.setBackgroundColor(getColor(R.color.c3));
+                                t5.setText(overallAnalysis[4]);
+                                t5.setBackgroundColor(getColor(R.color.c4));
+
                                 textView.setText(highlightSearchKey(transcript));
+
                                 /*AlertDialog dialog =
                                         new AlertDialog.Builder(MainActivity.this)
                                                 .setTitle("Sentiment: " + sentiment + " Mag: " + magnitude)
@@ -136,23 +163,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public void updateOverall(){
-        Spannable  highlight;
-        int        word_index;
-        String     title_str;
-
-        word_index = overallAnalysis.length;
-        for(int i=0; i<word_index; i++) {
-            String s = overallAnalysis[i];
-            title_str = Html.fromHtml(s).toString();
-            highlight = (Spannable) Html.fromHtml(s);
-            highlight.setSpan(
-                    new BackgroundColorSpan(colors.get(i)),
-                    0,
-                    title_str.length(),
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
-
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
     }
 
     public String getSentiment(Document doc, CloudNaturalLanguage naturalLanguageService){
@@ -246,9 +259,16 @@ public class MainActivity extends AppCompatActivity {
                     syntaxElements.add(message.split(","));
                   //  Log.i("Syntax", message);
                 }
-                overallAnalysis[2] += "person.";
-                overallAnalysis[4] += "voice. ";
-
+                if(overallAnalysis[2].equals("This passage is written from ")){
+                    overallAnalysis[2] = "";
+                }else {
+                    overallAnalysis[2] += "person.";
+                }
+                if(overallAnalysis[4].equals("with this voice: ")){
+                    overallAnalysis[4] = "";
+                }else {
+                    overallAnalysis[4] += "voice. ";
+                }
             }catch (java.io.IOException e) {
                 e.printStackTrace();
             }
@@ -294,5 +314,9 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return highlight;
+    }
+
+    private void updateLayout(){
+
     }
 }

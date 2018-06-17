@@ -40,7 +40,7 @@ public class ToneWords {
             do {
                 index = (int) (Math.random() * arr.length);
             }while (s.contains(arr[index]));
-            s+= arr[index] + " ";
+            s+= arr[index] + ", ";
         }
         return s.toUpperCase();
     }
