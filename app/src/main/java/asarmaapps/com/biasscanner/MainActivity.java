@@ -1,7 +1,6 @@
 package asarmaapps.com.biasscanner;
 
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -10,9 +9,9 @@ import android.text.Spannable;
 import android.text.style.BackgroundColorSpan;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.google.api.client.extensions.android.http.AndroidHttp;
@@ -23,13 +22,12 @@ import com.google.api.services.language.v1beta2.model.AnalyzeSyntaxRequest;
 import com.google.api.services.language.v1beta2.model.AnalyzeSyntaxResponse;
 import com.google.api.services.language.v1beta2.model.AnnotateTextRequest;
 import com.google.api.services.language.v1beta2.model.AnnotateTextResponse;
+import com.google.api.services.language.v1beta2.model.DependencyEdge;
 import com.google.api.services.language.v1beta2.model.Document;
 import com.google.api.services.language.v1beta2.model.Entity;
 import com.google.api.services.language.v1beta2.model.Features;
 import com.google.api.services.language.v1beta2.model.Sentence;
 import com.google.api.services.language.v1beta2.model.Token;
-
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,13 +57,14 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> syntaxHighlights = new ArrayList<>();
     private ArrayList<Integer> colors = new ArrayList<>();
     private ArrayList<Float> sentenceSent = new ArrayList<>();
+    private String[] phrases;
     private String[] overallAnalysis = {
             "This indicates a ",
             "The author\'s attitude towards the topics can be described as: ",
             "This passage is written from ",
             "Tenses: ",
             "Voices: "};
-    private ToneWords toneWords = new ToneWords();
+    private ProgressBar spinner;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
         t4 = findViewById(R.id.result4);
         t5 = findViewById(R.id.result5);
         editText = findViewById(R.id.editText);
+        spinner = findViewById(R.id.progressBar);
         Button enterButton = findViewById(R.id.browse_button);
         enterButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -117,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                      try{
+                         spinner.setVisibility(View.VISIBLE);
                         getSyntax(document, naturalLanguageService);
                         Log.i("Syntax", "Done1");
                         messageSentiment = (getSentiment(document, naturalLanguageService));
@@ -140,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
 
                                 textView.setText(Html.fromHtml(highlight(transcript)));
                                 Log.i("Final", "Final");
-
+                                spinner.setVisibility(View.GONE);
                                 /*AlertDialog dialog =
                                         new AlertDialog.Builder(MainActivity.this)
                                                 .setTitle("Sentiment: " + sentiment + " Mag: " + magnitude)
@@ -186,6 +187,14 @@ public class MainActivity extends AppCompatActivity {
             for(int i=0; i<sentencesList.size(); i++){
                 sentenceSent.add(sentencesList.get(i).getSentiment().getScore());
             }
+
+            for(Sentence sentence: sentencesList){
+                String s = sentence.getText().getContent();
+                if(s.contains(",")){
+                    phrases = s.split(", ");
+                } // Make Transition words into arrays. Make functions to check for words. If word found, bold, split. Get splits and run through API
+            }
+
 Log.i("Sentence", sentencesList.get(0).getText().getContent());
             for(int i=0; i<sentenceSent.size(); i++){
                 if(sentenceSent.get(i) < -0.3){
@@ -231,6 +240,11 @@ Log.i("Data", highlightedWords.get(0) + " " + sentenceSent.get(0) + " " + colors
         return messageSentiment;
     }
 
+    public void getPhrases(AnnotateTextRequest response){
+
+
+    }
+
     public void getSyntax(Document doc, CloudNaturalLanguage naturalLanguageService){
         String message="";
 
@@ -242,6 +256,7 @@ Log.i("Data", highlightedWords.get(0) + " " + sentenceSent.get(0) + " " + colors
                         naturalLanguageService.documents().
                                 analyzeSyntax(request).execute();
                 // print the response
+
                 for (Token token : response.getTokens()) {
                     message += token.toPrettyString() + "\n";
                     if(!token.getPartOfSpeech().getMood().equalsIgnoreCase("MOOD_UNKNOWN")){
