@@ -1,8 +1,10 @@
 package asarmaapps.com.biasscanner;
 
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.text.Spannable;
@@ -13,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
@@ -22,7 +25,6 @@ import com.google.api.services.language.v1beta2.model.AnalyzeSyntaxRequest;
 import com.google.api.services.language.v1beta2.model.AnalyzeSyntaxResponse;
 import com.google.api.services.language.v1beta2.model.AnnotateTextRequest;
 import com.google.api.services.language.v1beta2.model.AnnotateTextResponse;
-import com.google.api.services.language.v1beta2.model.DependencyEdge;
 import com.google.api.services.language.v1beta2.model.Document;
 import com.google.api.services.language.v1beta2.model.Entity;
 import com.google.api.services.language.v1beta2.model.Features;
@@ -36,6 +38,7 @@ import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity {
     private final String CLOUD_API_KEY = "AIzaSyDVgwrzDOpJyHu1LAUaDJtekK6jAUcMJgE";
+    public final static String EXTRA_MESSAGE = "asarmaapps.com.biasscanner";
     private TextView textView;
     private TextView resultText;
     private TextView t1;
@@ -50,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
     private String messageSyntax;
     private String topEntity;
     private String transcript;
+    private String advMessage;
     private List<Entity> entityList;
     private List<Sentence> sentencesList;
     private ArrayList<String[]> syntaxElements = new ArrayList<>();
@@ -57,13 +61,12 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> syntaxHighlights = new ArrayList<>();
     private ArrayList<Integer> colors = new ArrayList<>();
     private ArrayList<Float> sentenceSent = new ArrayList<>();
-    private String[] phrases;
     private String[] overallAnalysis = {
             "This indicates a ",
-            "The author\'s attitude towards the topics can be described as: ",
+            "These article's mood can be described as: ",
             "This passage is written from ",
-            "Tenses: ",
-            "Voices: "};
+            "Tenses used: ",
+            "Voices used: "};
     private ProgressBar spinner;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,20 +85,48 @@ public class MainActivity extends AppCompatActivity {
         t5 = findViewById(R.id.result5);
         editText = findViewById(R.id.editText);
         spinner = findViewById(R.id.progressBar);
+        spinner.setVisibility(View.INVISIBLE);
+        Button advancedButton = findViewById(R.id.advanced);
         Button enterButton = findViewById(R.id.browse_button);
+//These words indicate the mood of the article and the relationships between topics in the article:
+        AlertDialog dialog =
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Welcome!")
+                        .setMessage("Enter an article, press \"Enter\" and then \"Analyze\" to get results. \n" +
+                                "- Words to indicate the mood and the relationships between topics in the article are highlighted in yellow.\n" +
+                                "- The font color indicates overall feeling of the text. \n" +
+                                "- For deeper analysis, press \"Advanced\".")
+                        .setNeutralButton("Okay", null)
+                        .create();
+        dialog.show();
+
         enterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 textView.setText(editText.getText());
+                advMessage = editText.getText().toString();
                 editText.setText("");
             }
+        });
+        advancedButton.setOnClickListener(new View.OnClickListener(){
+           @Override
+           public void onClick(View view) {
+               if (!textView.getText().equals("")) {
+                   Intent intent = new Intent(MainActivity.this, Advanced.class);
+                   String message = advMessage + "|"+overallAnalysis[1] + "|"+overallAnalysis[2] + "|"+overallAnalysis[3] + "|"+overallAnalysis[4];
+                   intent.putExtra(EXTRA_MESSAGE, message);
+                   startActivity(intent);
+               }else{
+                   Toast.makeText(MainActivity.this, "Perform Basic Analysis before Advanced Analysis", Toast.LENGTH_LONG);
+               }
+           }
         });
 
         Button analyzeButton = findViewById(R.id.analyze_button);
         analyzeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //NaturalLanguageService
+                spinner.setVisibility(View.VISIBLE);
                 final CloudNaturalLanguage naturalLanguageService =
                         new CloudNaturalLanguage.Builder(
                                 AndroidHttp.newCompatibleTransport(),
@@ -130,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
                                 String message = "This passage has " + messageSentiment + " about " + topEntity + "." +
                                         "\n" + overallAnalysis[0];
                                 resultText.setText(message);
-                                t2.setText(overallAnalysis[1]);
+                                t2.setText(overallAnalysis[1] + "\n" + "(Words in this color also indicate relationships between subjects in the sentences).");
                                 t2.setBackgroundColor(getColor(R.color.c1));
                                 t3.setText(overallAnalysis[2]);
                                 t3.setBackgroundColor(getColor(R.color.c2));
@@ -188,13 +219,6 @@ public class MainActivity extends AppCompatActivity {
                 sentenceSent.add(sentencesList.get(i).getSentiment().getScore());
             }
 
-            for(Sentence sentence: sentencesList){
-                String s = sentence.getText().getContent();
-                if(s.contains(",")){
-                    phrases = s.split(", ");
-                } // Make Transition words into arrays. Make functions to check for words. If word found, bold, split. Get splits and run through API
-            }
-
 Log.i("Sentence", sentencesList.get(0).getText().getContent());
             for(int i=0; i<sentenceSent.size(); i++){
                 if(sentenceSent.get(i) < -0.3){
@@ -224,14 +248,14 @@ Log.i("Data", highlightedWords.get(0) + " " + sentenceSent.get(0) + " " + colors
                 if(magnitude > 4.0){
                     messageSentiment = "strongly " + messageSentiment;
                 }if(overallAnalysis[0].equals("This indicates a "))
-                    overallAnalysis[0] += "positive tone.";
+                    overallAnalysis[0] += "negative tone.";
             }
             if(sentiment > 0.3){
                 messageSentiment = "positive feelings";
                 if(magnitude > 4.0){
                     messageSentiment = "strongly " + messageSentiment;
                 }if(overallAnalysis[0].equals("This indicates a "))
-                    overallAnalysis[0] += "negative tone.";
+                    overallAnalysis[0] += "positive tone.";
             }
 
         }catch (java.io.IOException e){
@@ -268,21 +292,21 @@ Log.i("Data", highlightedWords.get(0) + " " + sentenceSent.get(0) + " " + colors
                     }
                     if(!token.getPartOfSpeech().getPerson().equalsIgnoreCase("PERSON_UNKNOWN")){
                         if(!overallAnalysis[2].contains(token.getPartOfSpeech().getPerson())) {
-                            overallAnalysis[2] += token.getPartOfSpeech().getPerson() + " ";
+                            overallAnalysis[2] += token.getPartOfSpeech().getPerson() + ", ";
                         }
                         /*highlightedWords.add(token.getText().getContent());
                         colors.add((Color.YELLOW));*/
                     }
                     if(!token.getPartOfSpeech().getTense().equalsIgnoreCase("TENSE_UNKNOWN")){
                         if(!overallAnalysis[3].contains(token.getPartOfSpeech().getTense())) {
-                            overallAnalysis[3] += token.getPartOfSpeech().getTense() + " ";
+                            overallAnalysis[3] += token.getPartOfSpeech().getTense() + ", ";
                             /*highlightedWords.add(token.getText().getContent());
                             colors.add((Color.LTGRAY));*/
                         }
                     }
                     if(!token.getPartOfSpeech().getVoice().equalsIgnoreCase("VOICE_UNKNOWN")){
                         if(!overallAnalysis[4].contains(token.getPartOfSpeech().getVoice())) {
-                            overallAnalysis[4] += token.getPartOfSpeech().getVoice() + " ";
+                            overallAnalysis[4] += token.getPartOfSpeech().getVoice() + ", ";
                         }
                         /*highlightedWords.add(token.getText().getContent());
                         colors.add((Color.MAGENTA));*/

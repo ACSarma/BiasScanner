@@ -4,14 +4,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context=".Advanced"
+    tools:showIn="@layout/activity_advanced"
     android:orientation="horizontal">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:orientation="vertical">
 
         <ScrollView
             android:layout_width="match_parent"
@@ -23,74 +25,30 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <EditText
-                    android:id="@+id/editText"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:hint="Enter Text"/>
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text=""
-                    android:id="@+id/speech_to_text_result"
+                    android:id="@+id/advText"
                     android:textSize="18sp"/>
+
 
             </LinearLayout>
 
         </ScrollView>
-
-        <LinearLayout
+        <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <Button
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/browse_button"
-                android:text="Enter"
-                android:backgroundTint="@color/colorAccent"/>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/analyze_button"
-                    android:text="Analyze"
-                    android:backgroundTint="@color/colorAccent"
-                    android:layout_weight="1"/>
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:backgroundTint="@color/colorAccent"
-                    android:text="Advanced"
-                    android:id="@+id/advanced"
-                    android:layout_weight="1"/>
-            </LinearLayout>
-
-        </LinearLayout>
+            android:text="Analyze"
+            android:id="@+id/analyze_button"
+            android:backgroundTint="@color/c2"/>
 
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="2"
         android:background="@color/background"
-        android:orientation="vertical">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="ANALYSIS"
-            android:gravity="center"
-            android:fontFamily="casual"
-            android:textStyle="bold"
-            android:textSize="20sp"/>
+        android:layout_weight="2">
 
         <ScrollView
             android:layout_width="match_parent"
@@ -98,15 +56,24 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:id="@+id/scroll">
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/advAnalysis"
+                    android:textSize="20sp"
+                    android:text="Advanced Analysis"
+                    android:fontFamily="casual"
+                    android:gravity="center"/>
 
                 <ProgressBar
                     android:id="@+id/progressBar"
                     android:layout_width="match_parent"
                     android:layout_height="125dp"
-                    android:indeterminateDrawable="@drawable/circular_progress_bar" />
+                    android:indeterminateDrawable="@drawable/circular_progress_bar"
+                    android:backgroundTint="@color/c2"/>
 
                 <TextView
                     android:layout_width="match_parent"
