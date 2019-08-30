@@ -30,7 +30,7 @@ import java.util.List;
 
 public class Advanced extends AppCompatActivity {
 
-    private final String CLOUD_API_KEY = "AIzaSyDVgwrzDOpJyHu1LAUaDJtekK6jAUcMJgE";
+    private final String CLOUD_API_KEY = "API KEY HERE";
     private String advancedMessage;
     private TextView advText;
     private TextView advAnalysis;

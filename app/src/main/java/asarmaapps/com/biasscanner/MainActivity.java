@@ -37,7 +37,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity {
-    private final String CLOUD_API_KEY = "AIzaSyDVgwrzDOpJyHu1LAUaDJtekK6jAUcMJgE";
+    private final String CLOUD_API_KEY = "API KEY HERE";
     public final static String EXTRA_MESSAGE = "asarmaapps.com.biasscanner";
     private TextView textView;
     private TextView resultText;
